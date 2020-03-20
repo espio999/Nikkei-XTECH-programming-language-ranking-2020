@@ -1,0 +1,95 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(readxl)
+library(NbClust)
+library(factoextra)
+library(Rmisc)
+library(FactoMineR)
+library(factoextra)
+library(corrplot)
+
+#PCA
+myPCA = function(d){
+  mypca = PCA(d, scale.unit = TRUE, graph = FALSE)
+  print(mypca$eig)
+  
+  fig20 = fviz_pca_var(mypca, col.var = "cos2", gradient.cols = c("blue", "red"), repel = TRUE)
+  fig21 = fviz_pca_var(mypca, col.var = "contrib", gradient.cols = c("blue", "red"), repel = TRUE)
+  multiplot(fig20, fig21, cols = 2)
+  
+  corrplot(t(mypca$var$cos2), addCoef.col = "gray")
+  corrplot(t(mypca$var$contrib), is.corr = FALSE, addCoef.col = "gray")
+  
+  fig22 = fviz_pca_biplot(
+    mypca,
+    col.var = "darkgreen",
+    col.ind = "cos2",
+    gradient.cols = c("blue", "red"),
+    repel = TRUE)
+  
+  fig23 = fviz_pca_biplot(
+    mypca,
+    col.var = "darkgreen",
+    col.ind = "cos2",
+    gradient.cols = c("blue", "red"),
+    repel = TRUE, select.ind = list(cos2 = 0.6))
+  
+  multiplot(fig22)
+  multiplot(fig23)
+}
+
+#number of cluster
+mynb = function(d){
+  myAHCnum = NbClust(d, method = "ward.D", index = "all")
+  myNHCnum = NbClust(scale(d), method = "kmeans", index = "alllong")
+  
+  fig1 = fviz_nbclust(myAHCnum, method = "silhouette")
+  fig2 = fviz_nbclust(myNHCnum, method = "gap_stat", nboot = 100)
+  multiplot(fig1, fig2)
+}
+
+#clustering
+mycl = function(c, d){
+  myAHC = hcut(d, k = c, stand = TRUE, graph = FALSE)
+  myNHC = kmeans(scale(d), c, iter.max = 100, nstart = nrow(d))
+
+  fig10 = fviz_silhouette(myAHC, label = TRUE, rotate = TRUE, print.summary = FALSE)
+  multiplot(fig10)
+  
+  fig11 = fviz_cluster(myNHC, data = d)
+  multiplot(fig11)
+}
+
+data = read_excel("C:/user/document/Temple University/DTA101/week08/assignment/data.xlsx")
+```
+
+# PCA with skill
+```{r}
+pca_data1 = as.matrix(data[,c(2:5)])
+rownames(pca_data1) = data$language
+myPCA(pca_data1)
+```
+
+# PCA with usage
+```{r}
+pca_data2 = as.matrix(data[,c(6:15)])
+rownames(pca_data2) = data$language
+pca_data2 = pca_data2[c(2:5, 8:10, 12, 14, 16, 18:21, 23:24),]
+myPCA(pca_data2)
+```
+
+# clustering
+```{r}
+d1 = as.matrix(data[, c(2:5)])
+d1 = scale(d1)
+rownames(d1) = data$language
+mynb(d1)
+
+for (i in c(2, 4, 9)){
+  mycl(i, d1)
+}
+```
